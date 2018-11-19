@@ -57,11 +57,20 @@ public class ZilliqaAPIFetcherService {
         return resultingHashes;
     }
 
-    public String fetchTransactionDetails(String transactionHash){
+    public String fetchTransactionDetails(String transactionHash) {
         RestTemplate restTemplate = new RestTemplate();
         HttpEntity<ZilliqaAPIRequestDto> request = new HttpEntity<>(ZilliqaAPIRequestDto.builder().
-                id("1").jsonrpc("2.0").method("GetTransaction").params(Collections.singletonList(transactionHash)).build(),headers);
-        return restTemplate.postForObject(API_PATH,request,String.class);
+                id("1").jsonrpc("2.0").method("GetTransaction").params(Collections.singletonList(transactionHash)).build(), headers);
+
+        String response = restTemplate.postForObject(API_PATH, request, String.class);
+        try {
+            final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
+            return node.get("result").toString();
+        }
+        catch (IOException e) {
+            log.error("Cannot transaction details .Exception:" + e);
+            throw new RuntimeException("JSON format has changed");
+        }
     }
 
     public List<String> getTransactions(){
