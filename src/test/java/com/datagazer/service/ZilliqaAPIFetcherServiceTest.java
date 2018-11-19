@@ -23,8 +23,6 @@ import static org.junit.Assert.*;
 @Transactional
 public class ZilliqaAPIFetcherServiceTest {
 
-//    RestTemplate restTemplate = new RestTemplate();
-
     @Autowired
     private ZilliqaAPIFetcherService zilliqaAPIFetcherService;
 
