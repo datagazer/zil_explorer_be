@@ -1,9 +1,9 @@
 #!/bin/bash 
 
-if [ "$#" -ne 1 ]; then
-    echo " Accepting exsaclty 1 parameter - aws config profile name! Exiting... "
-    exit 1
-fi
+#if [ "$#" -ne 1 ]; then
+#    echo " Accepting exsaclty 1 parameter - aws config profile name! Exiting... "
+#    exit 1
+#fi
 
 
 tag=`date +%s`
@@ -79,7 +79,7 @@ docker build -t 140914792638.dkr.ecr.eu-central-1.amazonaws.com/zil-explorer-be_
 
 rm Dockerfile 
 
-$(aws ecr get-login --no-include-email --region eu-central-1 --profile $1)
+$(aws ecr get-login --no-include-email --region eu-central-1)
 
 echo -e "\t \t \t \t \t \t \t \t \t \t Pushing container to ECR 140914792638.dkr.ecr.eu-central-1.amazonaws.com/zil-explorer-be_dev:$sha"
 
@@ -89,8 +89,8 @@ echo -e "\t \t \t \t \t \t \t \t \t \t Cleanin docker image"
 
 docker rmi 140914792638.dkr.ecr.eu-central-1.amazonaws.com/zil-explorer-be_dev:$sha 
 
-echo -e "\t \t \t \t \t \t \t \t \t \t Deploying new container "
+#echo -e "\t \t \t \t \t \t \t \t \t \t Deploying new container "
 
-./ecs-deploy -c ZIL_dev -n zil_be_dev -i 140914792638.dkr.ecr.eu-central-1.amazonaws.com/zil-explorer-be_dev:$sha --max-definitions 4 -r eu-central-1 --profile $1
+#./ecs-deploy -c ZIL_dev -n zil_be_dev -i 140914792638.dkr.ecr.eu-central-1.amazonaws.com/zil-explorer-be_dev:$sha --max-definitions 4 -r eu-central-1 --profile $1
 
 
