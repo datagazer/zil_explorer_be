@@ -1,24 +1,57 @@
 package com.datagazer.service;
 
 import com.datagazer.app.ZilliqaBeApp;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
-import static org.junit.Assert.assertEquals;
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = ZilliqaBeApp.class)
+@Slf4j
+@Transactional
 public class ZilliqaAPIFetcherServiceTest {
 
-    @Test
-    public void readExcelFile() {
-//        String apiPath = "https://api-scilla.zilliqa.com/";
-//        String apiPath = "https://scilla-test-api.aws.z7a.xyz";
-//        RestTemplate restTemplate = new RestTemplate();
-//        restTemplate.
+//    RestTemplate restTemplate = new RestTemplate();
 
+    @Autowired
+    private ZilliqaAPIFetcherService zilliqaAPIFetcherService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Test
+    public void fetchListOfHashes() {
+        List<String> transactionList = zilliqaAPIFetcherService.fetchTransactionList();
+        assertFalse(transactionList.isEmpty());
+    }
+
+    @Test
+    public void fetchTransactionDetails() throws IOException {
+        List<String> transactionList = zilliqaAPIFetcherService.fetchTransactionList();
+
+        String transactionDetails = zilliqaAPIFetcherService.fetchTransactionDetails(transactionList.get(0));
+        final ObjectNode node = new ObjectMapper().readValue(transactionDetails, ObjectNode.class);
+        String returnedId = node.get("result").get("ID").textValue();
+        assertEquals(transactionList.get(0),returnedId);
+    }
+
+    @Test
+    public void saveDetails() throws IOException {
+        jdbcTemplate.execute("delete from transactions");
+        zilliqaAPIFetcherService.saveTransactionDetails();
+        Integer size = jdbcTemplate.queryForObject("select count(1) from transactions", Integer.class);
+        assertTrue(size > 0);
     }
 }
