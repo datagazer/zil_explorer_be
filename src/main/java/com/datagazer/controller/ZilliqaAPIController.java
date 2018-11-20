@@ -3,18 +3,16 @@ package com.datagazer.controller;
 import com.datagazer.service.ZilliqaAPIFetcherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
-public class TransactionListController {
+public class ZilliqaAPIController {
 
     @Autowired
     private ZilliqaAPIFetcherService zilliqaAPIFetcherService;
@@ -26,13 +24,22 @@ public class TransactionListController {
 
     @GetMapping(value = "/transactions")
     public ResponseEntity<String> getTransactions() {
-        //TODO temporary workaround.
-        return ResponseEntity.ok("[" + zilliqaAPIFetcherService.getTransactions().stream().collect(Collectors.joining(","))+"]");
+
+        return wrapResponse(zilliqaAPIFetcherService.getTransactions());
     }
 
     @GetMapping(value = "/txblocks")
     public ResponseEntity<String> getTxBlocks() {
+        return wrapResponse(zilliqaAPIFetcherService.getTxBlocks());
+    }
+
+    @GetMapping(value = "/dsblocks")
+    public ResponseEntity<String> getDSBlocks() {
+        return wrapResponse(zilliqaAPIFetcherService.getDSBlocks());
+    }
+
+    private ResponseEntity<String> wrapResponse(Collection<String> col){
         //TODO temporary workaround.
-        return ResponseEntity.ok("[" + zilliqaAPIFetcherService.getTxBlocks().stream().collect(Collectors.joining(","))+"]");
+        return ResponseEntity.ok("[" + col.stream().collect(Collectors.joining(","))+"]");
     }
 }

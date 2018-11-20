@@ -30,7 +30,7 @@ public class ZilliqaAPIFetcherServiceTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    public void fetchListOfHashes() {
+    public void fetchTransactionHashes() {
         List<String> transactionList = zilliqaAPIFetcherService.fetchTransactionList();
         assertFalse(transactionList.isEmpty());
     }
@@ -41,12 +41,12 @@ public class ZilliqaAPIFetcherServiceTest {
 
         String transactionDetails = zilliqaAPIFetcherService.fetchTransactionDetails(transactionList.get(0));
         final ObjectNode node = new ObjectMapper().readValue(transactionDetails, ObjectNode.class);
-        String returnedId = node.get("result").get("ID").textValue();
+        String returnedId = node.get("ID").textValue();
         assertEquals(transactionList.get(0),returnedId);
     }
 
     @Test
-    public void saveDetails() throws IOException {
+    public void saveTransactionDetails() throws IOException {
         jdbcTemplate.execute("delete from transactions");
         zilliqaAPIFetcherService.saveTransactionDetails();
         Integer size = jdbcTemplate.queryForObject("select count(1) from transactions", Integer.class);
@@ -62,12 +62,11 @@ public class ZilliqaAPIFetcherServiceTest {
 
     @Test
     public void fetchTxBlockDetails() throws IOException {
-        List<String> transactionList = zilliqaAPIFetcherService.fetchTXBlockList();
-
-        String transactionDetails = zilliqaAPIFetcherService.fetchTxBlockDetails(Integer.parseInt(transactionList.get(0)));
-        final ObjectNode node = new ObjectMapper().readValue(transactionDetails, ObjectNode.class);
+        List<String> blockList = zilliqaAPIFetcherService.fetchTXBlockList();
+        String blockDetails = zilliqaAPIFetcherService.fetchTxBlockDetails(Integer.parseInt(blockList.get(0)));
+        final ObjectNode node = new ObjectMapper().readValue(blockDetails, ObjectNode.class);
         String returnedId = node.get("BlockNum").textValue();
-        assertEquals(transactionList.get(0),returnedId);
+        assertEquals(blockList.get(0),returnedId);
     }
 
     @Test
@@ -75,6 +74,30 @@ public class ZilliqaAPIFetcherServiceTest {
         jdbcTemplate.execute("delete from txblocks");
         zilliqaAPIFetcherService.saveTxBlockDetails();
         Integer size = jdbcTemplate.queryForObject("select count(1) from txblocks", Integer.class);
+        assertTrue(size > 0);
+    }
+
+    @Test
+    public void fetchListOfDSBlockNums() {
+        List<String> blockList = zilliqaAPIFetcherService.fetchDSBlockList();
+        log.info(blockList.toString());
+        assertFalse(blockList.isEmpty());
+    }
+
+    @Test
+    public void fetchDSBlockDetails() throws IOException {
+        List<String> blockList = zilliqaAPIFetcherService.fetchDSBlockList();
+        String blockDetails = zilliqaAPIFetcherService.fetchDSBlockDetails(Integer.parseInt(blockList.get(0)));
+        final ObjectNode node = new ObjectMapper().readValue(blockDetails, ObjectNode.class);
+        String returnedId = node.get("BlockNum").textValue();
+        assertEquals(blockList.get(0),returnedId);
+    }
+
+    @Test
+    public void saveDSBlockDetails() throws IOException {
+        jdbcTemplate.execute("delete from dsblocks");
+        zilliqaAPIFetcherService.saveDSBlockDetails();
+        Integer size = jdbcTemplate.queryForObject("select count(1) from dsblocks", Integer.class);
         assertTrue(size > 0);
     }
 }
