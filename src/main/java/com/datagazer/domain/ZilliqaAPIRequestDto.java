@@ -13,5 +13,5 @@ public class ZilliqaAPIRequestDto {
     private String id;
     private String jsonrpc;
     private String method;
-    private List<String> params;
+    private Object params;
 }

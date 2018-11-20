@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
-@RequestMapping(value = "/transactions")
 public class TransactionListController {
 
     @Autowired
@@ -25,9 +24,15 @@ public class TransactionListController {
 //        return ResponseEntity.ok(zilliqaAPIFetcherService.getTransactions());
 //    }
 
-    @GetMapping
+    @GetMapping(value = "/transactions")
     public ResponseEntity<String> getTransactions() {
         //TODO temporary workaround.
         return ResponseEntity.ok("[" + zilliqaAPIFetcherService.getTransactions().stream().collect(Collectors.joining(","))+"]");
+    }
+
+    @GetMapping(value = "/txblocks")
+    public ResponseEntity<String> getTxBlocks() {
+        //TODO temporary workaround.
+        return ResponseEntity.ok("[" + zilliqaAPIFetcherService.getTxBlocks().stream().collect(Collectors.joining(","))+"]");
     }
 }

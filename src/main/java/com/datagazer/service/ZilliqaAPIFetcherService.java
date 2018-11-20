@@ -10,14 +10,16 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -77,13 +79,99 @@ public class ZilliqaAPIFetcherService {
         return jdbcTemplate.queryForList("select details from transactions order by time_added desc limit 100",String.class);
     }
 
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void saveTransactionDetails(){
-        fetchTransactionList().forEach(tr -> {
-            String details = fetchTransactionDetails(tr);
-            //TODO do not add what is already there
-            //TODO BULK INSERT
-            jdbcTemplate.execute(String.format("insert into transactions (hash, details) values ('%s','%s')",tr, details));
-        });
+
+        Map<String,String> values = new LinkedHashMap<>();
+        fetchTransactionList().forEach(tr -> {values.put(tr,fetchTransactionDetails(tr));});
+        log.info("Saving transaction details.Number of transations queried:" + values.size() );
+
+        for(Map.Entry<String,String> transation : values.entrySet()) {
+            jdbcTemplate.batchUpdate("insert ignore into transactions (hash, details) values (?,?)", new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i)
+                        throws SQLException {
+                    ps.setString(1, transation.getKey());
+                    ps.setString(2, transation.getValue());
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return values.size();
+                }
+            });
+        }
+
+    }
+
+    public List<String> fetchTXBlockList(){
+        LinkedList<String> resultingTXBlockHashes = new LinkedList<>();
+        //todo read correct number of pages and take all blocks
+        for (int i = 1;i<=5;i++){
+            HttpEntity<ZilliqaAPIRequestDto> request = new HttpEntity<>(ZilliqaAPIRequestDto.builder().
+                    id("1").jsonrpc("2.0").method("TxBlockListing").params(Collections.singletonList(i)).build(),headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.postForEntity(API_PATH,request,String.class);
+
+            try {
+                final ObjectNode node = new ObjectMapper().readValue(response.getBody(), ObjectNode.class);
+                JsonNode txHashesNode = node.get("result").get("data");
+                if (txHashesNode.isArray()){
+                    for (final JsonNode objNode : txHashesNode) {
+                        resultingTXBlockHashes.add(objNode.get("BlockNum").asText());
+                    }
+                }
+            } catch (IOException e) {
+                log.error("Cannot get list of tx blocks.Exception:" + e);
+            }
+        }
+
+        return resultingTXBlockHashes;
+    }
+
+    public String fetchTxBlockDetails(Integer blockNum) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpEntity<ZilliqaAPIRequestDto> request = new HttpEntity<>(ZilliqaAPIRequestDto.builder().
+                id("1").jsonrpc("2.0").method("GetTxBlock").params(Collections.singletonList(String.valueOf(blockNum))).build(), headers);
+
+        String response = restTemplate.postForObject(API_PATH, request, String.class);
+        try {
+            final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
+            return node.get("result").get("header").toString();
+        }
+        catch (IOException e) {
+            log.error("Cannot get tx block details .Exception:" + e);
+            throw new RuntimeException("JSON format has changed");
+        }
+    }
+
+    @Scheduled(cron = "0 0/5 * * * ?")
+    public void saveTxBlockDetails(){
+
+        Map<Integer,String> values = new LinkedHashMap<>();
+        fetchTXBlockList().forEach(tr -> {values.put(Integer.parseInt(tr),fetchTxBlockDetails(Integer.parseInt(tr)));});
+        log.info("Saving transaction details.Number of transations queried:" + values.size() );
+
+        for(Map.Entry<Integer,String> block : values.entrySet()) {
+            jdbcTemplate.batchUpdate("insert ignore into txblocks (block_num, details) values (?,?)", new BatchPreparedStatementSetter() {
+                @Override
+                public void setValues(PreparedStatement ps, int i)
+                        throws SQLException {
+                    ps.setInt(1, block.getKey());
+                    ps.setString(2, block.getValue());
+                }
+
+                @Override
+                public int getBatchSize() {
+                    return values.size();
+                }
+            });
+        }
+
+    }
+
+    public List<String> getTxBlocks(){
+        return jdbcTemplate.queryForList("select details from txblocks order by time_added desc limit 100",String.class);
     }
 }
-//{"id":"1","jsonrpc":"2.0","result":{"TxnHashes":["5cea701aaf4afb65261bac7833fa135fe00f004ea53c136f264192a841a8a4b1","38301b65763f69590edbb9b6097438a05e37224e8533f03907fb613220ac5daf","7e99abb3ad8ee867ac5015311514e573c6c1c2590a4425b1bbc2dacffa0c1f1f","156848effd130b7913be42d5844ffbf3ee3363ab77f8d5a08b4306ee96021c48","88fca6f55c072ef329530a289297933f114ff2dbe470f93045663ec2b9e95e28","39156a2340fd139bda336422e7cbb52d861c231dc295c7d82c6f8aa2dd4c7b5b","97119a69e510c5fc6bf6af060231b0bf09bfe3e9ca9b4c5387f2a217d0dfe451","d2c237dfb20dd26f24be771ccdc37713c84eeebfff4b5268af49ad7b8f36312c","66f408ef94c976b4310f5e47961391e10844c673c3c4fcc9bd2c1596fd3a6792","7f65a65f8f593f277c7214c57381fe77a9e81e1a70cb381ad577e6e85fea0eea","1e316974069dbb6dacf716092090f71fe920e752bb5b918c9276b256b079351c","cac38ae7236eda244c736b986ce0b86ce45fc5b35b18d2ea5d9351795720f20d"],"number":12}}

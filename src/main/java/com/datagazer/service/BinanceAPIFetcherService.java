@@ -39,7 +39,7 @@ public class BinanceAPIFetcherService {
 
     public ZilPriceDto getPriceTriplet(){
         Double zilPrice = getZilPrice();
-        return ZilPriceDto.builder().price(String.format("%.4f", zilPrice)).totalZilSupply(String.format("%.0fM", totalZilIssued/ 1000000.0)).
+        return ZilPriceDto.builder().price(String.format("$%.4f", zilPrice)).totalZilSupply(String.format("%.0fM", totalZilIssued/ 1000000.0)).
                 capitalization(String.format("%.0fM", zilPrice*totalZilIssued/ 1000000.0)).build();
     }
 

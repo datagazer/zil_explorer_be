@@ -52,4 +52,29 @@ public class ZilliqaAPIFetcherServiceTest {
         Integer size = jdbcTemplate.queryForObject("select count(1) from transactions", Integer.class);
         assertTrue(size > 0);
     }
+
+    @Test
+    public void fetchListOfTXBlockNums() {
+        List<String> blockList = zilliqaAPIFetcherService.fetchTXBlockList();
+        log.info(blockList.toString());
+        assertFalse(blockList.isEmpty());
+    }
+
+    @Test
+    public void fetchTxBlockDetails() throws IOException {
+        List<String> transactionList = zilliqaAPIFetcherService.fetchTXBlockList();
+
+        String transactionDetails = zilliqaAPIFetcherService.fetchTxBlockDetails(Integer.parseInt(transactionList.get(0)));
+        final ObjectNode node = new ObjectMapper().readValue(transactionDetails, ObjectNode.class);
+        String returnedId = node.get("BlockNum").textValue();
+        assertEquals(transactionList.get(0),returnedId);
+    }
+
+    @Test
+    public void saveTxBlockDetails() throws IOException {
+        jdbcTemplate.execute("delete from txblocks");
+        zilliqaAPIFetcherService.saveTxBlockDetails();
+        Integer size = jdbcTemplate.queryForObject("select count(1) from txblocks", Integer.class);
+        assertTrue(size > 0);
+    }
 }
