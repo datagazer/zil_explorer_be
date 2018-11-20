@@ -67,7 +67,9 @@ public class ZilliqaAPIFetcherService {
         String response = restTemplate.postForObject(API_PATH, request, String.class);
         try {
             final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
-            return node.get("result").toString();
+            ((ObjectNode)node.get("result")).put("timestamp",System.currentTimeMillis());
+            JsonNode result = node.get("result");
+            return result.toString();
         }
         catch (IOException e) {
             log.error("Cannot transaction details .Exception:" + e);
