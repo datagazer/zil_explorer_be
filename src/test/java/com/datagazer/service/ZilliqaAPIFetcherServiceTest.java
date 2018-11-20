@@ -37,8 +37,10 @@ public class ZilliqaAPIFetcherServiceTest {
 
     @Test
     public void fetchTransactionRate() {
-        Double rate = zilliqaAPIFetcherService.fetchTransactionRate();
+        Double rate = zilliqaAPIFetcherService.fetchTransactionRateAndNumTxBlocks().getLeft();
+        Integer numTxBlocks = zilliqaAPIFetcherService.fetchTransactionRateAndNumTxBlocks().getRight();
         assertTrue(rate >= 0);
+        assertTrue(numTxBlocks >= 0);
     }
 
     @Test

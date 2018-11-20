@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.internal.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -45,11 +46,12 @@ public class ZilliqaAPIFetcherService {
         return restTemplate.postForObject(API_PATH,request,String.class);
     }
 
-    public Double fetchTransactionRate(){
+    public Pair<Double, Integer> fetchTransactionRateAndNumTxBlocks(){
+        //
         String response = requestZilliqaApi("GetBlockchainInfo",Collections.singletonList(""));
         try {
             final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
-            return node.get("result").get("TransactionRate").asDouble();
+            return Pair.of(node.get("result").get("TransactionRate").asDouble(),node.get("result").get("NumTxBlocks").asInt());
 
         } catch (IOException e) {
             log.error("Cannot get list of transactions.Exception:" + e);
@@ -57,7 +59,11 @@ public class ZilliqaAPIFetcherService {
         }
     }
 
-//    public void saveTransactionRate
+    public void saveTransactionRate(){
+        Double transactionRate = fetchTransactionRateAndNumTxBlocks().getLeft();
+        Integer numTxBlocks = fetchTransactionRateAndNumTxBlocks().getRight();
+        jdbcTemplate.execute(String.format("insert into blockchain_summary (transaction_rate,tx_block_num) values(%s,%s)",transactionRate,numTxBlocks));
+    }
 
     public List<String> fetchTransactionList(){
         String response = requestZilliqaApi("GetRecentTransactions",Collections.singletonList(""));
@@ -128,7 +134,6 @@ public class ZilliqaAPIFetcherService {
         return fetchBlockDetails(blockNum,"GetDsBlock");
     }
 
-
     private String fetchBlockDetails(Integer blockNum, String apiMethodName) {
         String response = requestZilliqaApi(apiMethodName,Collections.singletonList(String.valueOf(blockNum)));
         try {
@@ -150,18 +155,18 @@ public class ZilliqaAPIFetcherService {
 
     @Scheduled(cron = "0 0/5 * * * ?")
     public void saveTxBlockDetails(){
-        saveBlockDetails((s -> fetchTxBlockDetails(Integer.parseInt(s))),"txblocks");
+        saveBlockDetails((s -> fetchTxBlockDetails(Integer.parseInt(s))),"txblocks",fetchTXBlockList());
     }
 
     @Scheduled(cron = "0 0/5 * * * ?")
     public void saveDSBlockDetails(){
-        saveBlockDetails((s -> fetchDSBlockDetails(Integer.parseInt(s))),"dsblocks");
+        saveBlockDetails((s -> fetchDSBlockDetails(Integer.parseInt(s))),"dsblocks",fetchDSBlockList());
     }
 
-    private void saveBlockDetails(Function<String, String> detailsBlockFetchFunction, String tableName){
+    private void saveBlockDetails(Function<String, String> detailsBlockFetchFunction, String tableName,List<String> blockNumList){
 
         Map<Integer,String> values = new LinkedHashMap<>();
-        fetchTXBlockList().forEach(tr -> {values.put(Integer.parseInt(tr),detailsBlockFetchFunction.apply(tr));});
+        blockNumList.forEach(tr -> {values.put(Integer.parseInt(tr),detailsBlockFetchFunction.apply(tr));});
         log.info("Saving " + tableName+" details.Number of block queried:" + values.size() );
 
         for(Map.Entry<Integer,String> block : values.entrySet()) {
