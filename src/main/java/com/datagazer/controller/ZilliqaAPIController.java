@@ -1,5 +1,6 @@
 package com.datagazer.controller;
 
+import com.datagazer.domain.BlockchainSummaryDto;
 import com.datagazer.service.ZilliqaAPIFetcherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -36,6 +38,11 @@ public class ZilliqaAPIController {
     @GetMapping(value = "/dsblocks")
     public ResponseEntity<String> getDSBlocks() {
         return wrapResponse(zilliqaAPIFetcherService.getDSBlocks());
+    }
+
+    @GetMapping(value = "/charts")
+    public ResponseEntity<List<BlockchainSummaryDto>> getChartData() {
+        return ResponseEntity.ok(zilliqaAPIFetcherService.getBlockchainSummaryList());
     }
 
     private ResponseEntity<String> wrapResponse(Collection<String> col){

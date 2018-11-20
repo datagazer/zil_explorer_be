@@ -1,6 +1,7 @@
 package com.datagazer.service;
 
 import com.datagazer.app.ZilliqaBeApp;
+import com.datagazer.domain.BlockchainSummaryDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
@@ -108,4 +109,21 @@ public class ZilliqaAPIFetcherServiceTest {
         Integer size = jdbcTemplate.queryForObject("select count(1) from dsblocks", Integer.class);
         assertTrue(size > 0);
     }
+
+    @Test
+    public void saveBlockChainSummary() throws IOException {
+        jdbcTemplate.execute("delete from blockchain_summary");
+        zilliqaAPIFetcherService.saveBlockchainSummary();
+        Integer size = jdbcTemplate.queryForObject("select count(1) from blockchain_summary", Integer.class);
+        assertTrue(size > 0);
+    }
+
+    @Test
+    public void getBlockchainSummary() throws IOException {
+        jdbcTemplate.execute("insert into blockchain_summary (transaction_rate,tx_block_num,zil_price) values(123.23,3444,0.00022)");
+        List<BlockchainSummaryDto> blockchainSummaryList = zilliqaAPIFetcherService.getBlockchainSummaryList();
+        log.info(blockchainSummaryList.get(0).toString());
+        assertTrue(blockchainSummaryList.size() > 0);
+    }
+
 }

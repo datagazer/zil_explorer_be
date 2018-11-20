@@ -1,5 +1,6 @@
 package com.datagazer.service;
 
+import com.datagazer.domain.BlockchainSummaryDto;
 import com.datagazer.domain.ZilliqaAPIRequestDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,9 @@ public class ZilliqaAPIFetcherService {
     private ObjectMapper objectMapper = new ObjectMapper();
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private BinanceAPIFetcherService binanceAPIFetcherService;
 
     public static String API_PATH = "https://api-scilla.zilliqa.com";
     public static HttpHeaders headers = new HttpHeaders();
@@ -59,10 +64,13 @@ public class ZilliqaAPIFetcherService {
         }
     }
 
-    public void saveTransactionRate(){
-        Double transactionRate = fetchTransactionRateAndNumTxBlocks().getLeft();
-        Integer numTxBlocks = fetchTransactionRateAndNumTxBlocks().getRight();
-        jdbcTemplate.execute(String.format("insert into blockchain_summary (transaction_rate,tx_block_num) values(%s,%s)",transactionRate,numTxBlocks));
+    @Scheduled(cron = "0 0/5 * * * ?")
+    public void saveBlockchainSummary(){
+        Pair<Double, Integer> transactionRateAndNumTxBlocks = fetchTransactionRateAndNumTxBlocks();
+        Double transactionRate = transactionRateAndNumTxBlocks.getLeft();
+        Integer numTxBlocks = transactionRateAndNumTxBlocks.getRight();
+        Double zilPrice = binanceAPIFetcherService.getZilPrice();
+        jdbcTemplate.execute(String.format("insert into blockchain_summary (transaction_rate,tx_block_num,zil_price) values(%s,%s,%s)",transactionRate,numTxBlocks,zilPrice));
     }
 
     public List<String> fetchTransactionList(){
@@ -225,5 +233,10 @@ public class ZilliqaAPIFetcherService {
         }
 
         return resultingBlockNums;
+    }
+
+    public List<BlockchainSummaryDto> getBlockchainSummaryList(){
+       return jdbcTemplate.query("select avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded " +
+                "from blockchain_summary group by day_added order by day_added desc limit 7",new BeanPropertyRowMapper(BlockchainSummaryDto.class));
     }
 }
