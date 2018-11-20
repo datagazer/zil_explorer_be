@@ -36,6 +36,12 @@ public class ZilliqaAPIFetcherServiceTest {
     }
 
     @Test
+    public void fetchTransactionRate() {
+        Double rate = zilliqaAPIFetcherService.fetchTransactionRate();
+        assertTrue(rate >= 0);
+    }
+
+    @Test
     public void fetchTransactionDetails() throws IOException {
         List<String> transactionList = zilliqaAPIFetcherService.fetchTransactionList();
 

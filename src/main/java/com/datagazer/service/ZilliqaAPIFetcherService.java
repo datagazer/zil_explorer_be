@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -43,6 +44,20 @@ public class ZilliqaAPIFetcherService {
         RestTemplate restTemplate = new RestTemplate();
         return restTemplate.postForObject(API_PATH,request,String.class);
     }
+
+    public Double fetchTransactionRate(){
+        String response = requestZilliqaApi("GetBlockchainInfo",Collections.singletonList(""));
+        try {
+            final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
+            return node.get("result").get("TransactionRate").asDouble();
+
+        } catch (IOException e) {
+            log.error("Cannot get list of transactions.Exception:" + e);
+            throw new RuntimeException("Cannot get transaction rate. JSON format has changed");
+        }
+    }
+
+//    public void saveTransactionRate
 
     public List<String> fetchTransactionList(){
         String response = requestZilliqaApi("GetRecentTransactions",Collections.singletonList(""));
@@ -80,7 +95,7 @@ public class ZilliqaAPIFetcherService {
         return jdbcTemplate.queryForList("select details from transactions order by time_added desc limit 100",String.class);
     }
 
-//    @Scheduled(cron = "0 0/5 * * * ?")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void saveTransactionDetails(){
 
         Map<String,String> values = new LinkedHashMap<>();
@@ -133,12 +148,12 @@ public class ZilliqaAPIFetcherService {
         }
     }
 
-    //    @Scheduled(cron = "0 0/5 * * * ?")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void saveTxBlockDetails(){
         saveBlockDetails((s -> fetchTxBlockDetails(Integer.parseInt(s))),"txblocks");
     }
 
-    //    @Scheduled(cron = "0 0/5 * * * ?")
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void saveDSBlockDetails(){
         saveBlockDetails((s -> fetchDSBlockDetails(Integer.parseInt(s))),"dsblocks");
     }
