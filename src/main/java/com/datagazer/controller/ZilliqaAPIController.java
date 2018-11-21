@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
@@ -38,6 +39,11 @@ public class ZilliqaAPIController {
     @GetMapping(value = "/dsblocks")
     public ResponseEntity<String> getDSBlocks() {
         return wrapResponse(zilliqaAPIFetcherService.getDSBlocks());
+    }
+
+    @GetMapping(value = "/dsblocks/{blockNum}/txblocks")
+    public ResponseEntity<String> getTXBlocksForDSBlock(@PathVariable Integer blockNum) {
+        return wrapResponse(zilliqaAPIFetcherService.getTxBlockDetailsForADSBlock(blockNum));
     }
 
     @GetMapping(value = "/charts")

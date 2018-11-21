@@ -1,0 +1,1 @@
+alter table txblocks add column dsblock_num INTEGER as (cast(json_extract(details,"$.DSBlockNum") as UNSIGNED));

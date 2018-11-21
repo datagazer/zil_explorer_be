@@ -239,4 +239,8 @@ public class ZilliqaAPIFetcherService {
        return jdbcTemplate.query("select avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded " +
                 "from blockchain_summary group by day_added order by day_added desc limit 7",new BeanPropertyRowMapper(BlockchainSummaryDto.class));
     }
+
+    public List<String> getTxBlockDetailsForADSBlock(Integer dsBlockNum){
+        return jdbcTemplate.queryForList("select details from txblocks where dsblock_num = ?",new Object[]{dsBlockNum},String.class);
+    }
 }

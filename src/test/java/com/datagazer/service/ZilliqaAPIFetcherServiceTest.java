@@ -126,4 +126,13 @@ public class ZilliqaAPIFetcherServiceTest {
         assertTrue(blockchainSummaryList.size() > 0);
     }
 
+    @Test
+    public void getTxBlockDetailsForADSBlock() throws IOException {
+        zilliqaAPIFetcherService.saveTxBlockDetails();
+        Integer dsblockNum = jdbcTemplate.queryForObject("select dsblock_num from txblocks limit 1", Integer.class);
+        List<String> txBlockList = zilliqaAPIFetcherService.getTxBlockDetailsForADSBlock(dsblockNum);
+        log.info(""+txBlockList);
+        assertTrue(txBlockList.size() > 0);
+    }
+
 }
