@@ -32,16 +32,29 @@ public class BinanceAPIFetcherService {
         }
     }
 
+
+
     private double getPricePair(RestTemplate restTemplate, ObjectMapper objectMapper, String endpoint) throws IOException {
         ObjectNode node = objectMapper.readValue(restTemplate.getForObject(endpoint, String.class), ObjectNode.class);
         return Double.parseDouble(node.get("price").asText());
     }
-
+//TODO deprecate once FE moved to better API
     public ZilPriceDto getPriceTriplet(){
         Double zilPrice = getZilPrice();
         return ZilPriceDto.builder().price(String.format("$%.4f", zilPrice)).totalZilSupply(String.format("%.0fM", totalZilIssued/ 1000000.0)).
                 capitalization(String.format("%.0fM", zilPrice*totalZilIssued/ 1000000.0)).build();
     }
 
+    public String getTotalZilIssued(){
+        return String.format("%.0fM", totalZilIssued/ 1000000.0);
+    }
+
+    public String getCapitalization(Double zilPrice){
+        return String.format("%.0fM", zilPrice*totalZilIssued/ 1000000.0);
+    }
+
+    public String getZilPriceString(Double zilPrice){
+        return String.format("$%.4f", zilPrice);
+    }
 
 }

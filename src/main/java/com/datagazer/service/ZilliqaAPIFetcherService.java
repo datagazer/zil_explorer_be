@@ -1,6 +1,8 @@
 package com.datagazer.service;
 
 import com.datagazer.domain.BlockchainSummaryDto;
+import com.datagazer.domain.MainPageValuesDto;
+import com.datagazer.domain.ZilPriceDto;
 import com.datagazer.domain.ZilliqaAPIRequestDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -114,7 +116,7 @@ public class ZilliqaAPIFetcherService {
 
         Map<String,String> values = new LinkedHashMap<>();
         fetchTransactionList().forEach(tr -> {values.put(tr,fetchTransactionDetails(tr));});
-        log.info("Saving transaction details.Number of transations queried:" + values.size() );
+        log.info("Saving transaction details.Number of transactions queried:" + values.size() );
 
         for(Map.Entry<String,String> transation : values.entrySet()) {
             jdbcTemplate.batchUpdate("insert ignore into transactions (hash, details) values (?,?)", new BatchPreparedStatementSetter() {
@@ -131,7 +133,6 @@ public class ZilliqaAPIFetcherService {
                 }
             });
         }
-
     }
 
     public String fetchTxBlockDetails(Integer blockNum) {
@@ -243,4 +244,32 @@ public class ZilliqaAPIFetcherService {
     public List<String> getTxBlockDetailsForADSBlock(Integer dsBlockNum){
         return jdbcTemplate.queryForList("select details from txblocks where dsblock_num = ?",new Object[]{dsBlockNum},String.class);
     }
+
+//    public Collection<String> getAddressTransactions(String addressNumber) {
+//        return jdbcTemplate.query("select details from transactions where ");
+//    }
+
+    public MainPageValuesDto getMainPageValues(){
+        Double zilPrice = binanceAPIFetcherService.getZilPrice();
+
+        Double transactionRate = fetchTransactionRateAndNumTxBlocks().getLeft();
+        String miningDifficulty = getMiningDifficulty();
+
+
+        return MainPageValuesDto.builder().
+                                    price(binanceAPIFetcherService.getZilPriceString(zilPrice)).
+                                    totalZilSupply(binanceAPIFetcherService.getTotalZilIssued()).
+                                    capitalization(binanceAPIFetcherService.getCapitalization(zilPrice)).
+                                    transactionRate(transactionRate).
+                                    miningDifficulty(miningDifficulty).
+                                build();
+
+
+    }
+
+
+    public String getMiningDifficulty(){
+        return jdbcTemplate.queryForObject("select json_extract(details,\"$.difficulty\") from zil_test.dsblocks order by block_num desc limit 1",String.class);
+    }
+
 }

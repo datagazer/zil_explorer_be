@@ -135,4 +135,11 @@ public class ZilliqaAPIFetcherServiceTest {
         assertTrue(txBlockList.size() > 0);
     }
 
+    @Test
+    public void getMiningDifficulty() throws IOException {
+        zilliqaAPIFetcherService.saveDSBlockDetails();
+        String miningDifficulty = zilliqaAPIFetcherService.getMiningDifficulty();
+        assertTrue(Integer.valueOf(miningDifficulty) > 0);
+    }
+
 }

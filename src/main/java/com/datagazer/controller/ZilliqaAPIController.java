@@ -1,6 +1,7 @@
 package com.datagazer.controller;
 
 import com.datagazer.domain.BlockchainSummaryDto;
+import com.datagazer.domain.MainPageValuesDto;
 import com.datagazer.service.ZilliqaAPIFetcherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,13 +47,25 @@ public class ZilliqaAPIController {
         return wrapResponse(zilliqaAPIFetcherService.getTxBlockDetailsForADSBlock(blockNum));
     }
 
+//    @GetMapping(value = "/address/{addressNumber}/transactions")
+//    public ResponseEntity<String> getAddressTransactions(@PathVariable String addressNumber) {
+//        return wrapResponse(zilliqaAPIFetcherService.getAddressTransactions(addressNumber));
+//    }
+
     @GetMapping(value = "/charts")
     public ResponseEntity<List<BlockchainSummaryDto>> getChartData() {
         return ResponseEntity.ok(zilliqaAPIFetcherService.getBlockchainSummaryList());
+    }
+
+    @GetMapping(value = "/mainpage")
+    public ResponseEntity<MainPageValuesDto> getMainPageValuesData() {
+        return ResponseEntity.ok(zilliqaAPIFetcherService.getMainPageValues());
     }
 
     private ResponseEntity<String> wrapResponse(Collection<String> col){
         //TODO temporary workaround.
         return ResponseEntity.ok("[" + col.stream().collect(Collectors.joining(","))+"]");
     }
+
+
 }
