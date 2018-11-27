@@ -38,10 +38,14 @@ public class ZilliqaAPIFetcherServiceTest {
 
     @Test
     public void fetchTransactionRate() {
-        Double rate = zilliqaAPIFetcherService.fetchTransactionRateAndNumTxBlocks().getLeft();
-        Integer numTxBlocks = zilliqaAPIFetcherService.fetchTransactionRateAndNumTxBlocks().getRight();
+        BlockchainSummaryDto blockchainSummaryDto = zilliqaAPIFetcherService.fetchBlockChainInfo();
+        Double rate = blockchainSummaryDto.getTransactionRate();
+        Double numTxBlocks = blockchainSummaryDto.getTxBlockNum();
+
         assertTrue(rate >= 0);
         assertTrue(numTxBlocks >= 0);
+        assertTrue(zilliqaAPIFetcherService.fetchBlockChainInfo().getTransactionNum() >= 0);
+
     }
 
     @Test
