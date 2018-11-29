@@ -225,7 +225,7 @@ public class ZilliqaAPIFetcherService {
             try {
                 final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
                 JsonNode txHashesNode = node.get("result").get("data");
-                if (txHashesNode.isArray()){
+                if (txHashesNode != null && txHashesNode.isArray()){
                     for (final JsonNode objNode : txHashesNode) {
                         resultingBlockNums.add(objNode.get("BlockNum").asText());
                     }
