@@ -16,4 +16,5 @@ public class BlockchainSummaryDto {
     private Double zilPrice;
     private Double transactionNum;
     private LocalDate dayAdded;
+    private Double dsMiningDifficulty;
 }

@@ -74,7 +74,8 @@ public class ZilliqaAPIFetcherService {
         Double numTxBlocks = blockchainSummaryDto.getTxBlockNum();
         Double zilPrice = binanceAPIFetcherService.getZilPrice();
         Double transactionNum = blockchainSummaryDto.getTransactionNum();
-        jdbcTemplate.execute(String.format("insert into blockchain_summary (transaction_num,transaction_rate,tx_block_num,zil_price) values(%s,%s,%s,%s)",transactionNum,transactionRate,numTxBlocks,zilPrice));
+        Double dsMiningDifficulty = Double.parseDouble(getMiningDifficulty());
+        jdbcTemplate.execute(String.format("insert into blockchain_summary (ds_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(%s,%s,%s,%s,%s)",dsMiningDifficulty,transactionNum,transactionRate,numTxBlocks,zilPrice));
     }
 
     public List<String> fetchTransactionList(){
@@ -240,7 +241,7 @@ public class ZilliqaAPIFetcherService {
 
     public List<BlockchainSummaryDto> getBlockchainSummaryList(){
         String sql = "select * from ( " +
-                "select max(transaction_num) as transactionNum,avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded from blockchain_summary group by day_added order by day_added desc limit 7) x " +
+                "select coalesce(avg(ds_mining_difficulty),0) as dsMiningDifficulty, max(transaction_num) as transactionNum,avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded from blockchain_summary group by day_added order by day_added desc limit 7) x " +
                 "order by x.dayAdded asc";
        return jdbcTemplate.query(sql,new BeanPropertyRowMapper(BlockchainSummaryDto.class));
     }
