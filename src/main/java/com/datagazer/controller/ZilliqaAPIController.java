@@ -57,6 +57,11 @@ public class ZilliqaAPIController {
         return ResponseEntity.ok(zilliqaAPIFetcherService.getBlockchainSummaryList());
     }
 
+    @GetMapping(value = "/charts/full")
+    public ResponseEntity<List<BlockchainSummaryDto>> getChartFullHistoryData() {
+        return ResponseEntity.ok(zilliqaAPIFetcherService.getBlockchainSummaryFullHistoryList());
+    }
+
     @GetMapping(value = "/mainpage")
     public ResponseEntity<MainPageValuesDto> getMainPageValuesData() {
         return ResponseEntity.ok(zilliqaAPIFetcherService.getMainPageValues());
