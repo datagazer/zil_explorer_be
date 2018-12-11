@@ -207,7 +207,7 @@ public class ZilliqaAPIFetcherService {
     }
 
     private List<String> getBlocks(String tableName){
-        return jdbcTemplate.queryForList("select details from "+ tableName+" order by cast(json_extract(details,'$.BlockNum') as unsigned) desc limit 100",String.class);
+        return jdbcTemplate.queryForList("select details from "+ tableName+" order by cast(json_extract(details,'$.timestamp') as unsigned) desc limit 100",String.class);
     }
 
     public List<String> fetchTXBlockList(){
