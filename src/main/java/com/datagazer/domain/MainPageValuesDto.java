@@ -14,7 +14,8 @@ import java.time.LocalDate;
 public class MainPageValuesDto {
     private Double transactionRate;
     private String price;
-    private String miningDifficulty;
+    private String txMiningDifficulty;
+    private String dsMiningDifficulty;
     private String totalZilSupply;
     private String capitalization;
 }

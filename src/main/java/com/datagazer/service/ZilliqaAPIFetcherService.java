@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.internal.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,7 +36,7 @@ public class ZilliqaAPIFetcherService {
     @Autowired
     private BinanceAPIFetcherService binanceAPIFetcherService;
 
-    public static String API_PATH = "https://api-scilla.zilliqa.com";
+    public static String API_PATH = "https://api.zilliqa.com";
     public static HttpHeaders headers = new HttpHeaders();
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36";
 
@@ -74,12 +75,12 @@ public class ZilliqaAPIFetcherService {
         Double numTxBlocks = blockchainSummaryDto.getTxBlockNum();
         Double zilPrice = binanceAPIFetcherService.getZilPrice();
         Double transactionNum = blockchainSummaryDto.getTransactionNum();
-        Double dsMiningDifficulty = Double.parseDouble(getMiningDifficulty());
-        jdbcTemplate.execute(String.format("insert into blockchain_summary (ds_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(%s,%s,%s,%s,%s)",dsMiningDifficulty,transactionNum,transactionRate,numTxBlocks,zilPrice));
+        Pair<Double,Double> miningDifficulty = getMiningDifficulty();
+        jdbcTemplate.execute(String.format("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(%s,%s,%s,%s,%s,%s)",miningDifficulty.getRight(),miningDifficulty.getLeft(),transactionNum,transactionRate,numTxBlocks,zilPrice));
     }
 
     public List<String> fetchTransactionList(){
-        String response = requestZilliqaApi("GetRecentTransactions",Collections.singletonList(""));
+        String response = requestZilliqaApi("GetRecentTransactions",Collections.singletonList("100"));
         LinkedList<String> resultingHashes = new LinkedList<>();
         try {
             final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
@@ -231,6 +232,9 @@ public class ZilliqaAPIFetcherService {
             String response = requestZilliqaApi(apiMethodName,Collections.singletonList(i));
             try {
                 final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
+                if (node.get("result") == null){
+                    break;
+                }
                 JsonNode txHashesNode = node.get("result").get("data");
                 if (txHashesNode != null && txHashesNode.isArray()){
                     for (final JsonNode objNode : txHashesNode) {
@@ -261,22 +265,31 @@ public class ZilliqaAPIFetcherService {
         Double zilPrice = binanceAPIFetcherService.getZilPrice();
 
         Double transactionRate = fetchBlockChainInfo().getTransactionRate();
-        String miningDifficulty = getMiningDifficulty();
+        Pair<Double, Double> miningDifficulty = getMiningDifficulty();
 
         return MainPageValuesDto.builder().
                                     price(binanceAPIFetcherService.getZilPriceString(zilPrice)).
                                     totalZilSupply(binanceAPIFetcherService.getTotalZilIssued()).
                                     capitalization(binanceAPIFetcherService.getCapitalization(zilPrice)).
                                     transactionRate(transactionRate).
-                                    miningDifficulty(miningDifficulty).
+                                    txMiningDifficulty(miningDifficulty.getLeft().toString()).
+                                    txMiningDifficulty(miningDifficulty.getRight().toString()).
                                 build();
-
-
     }
 
 
-    public String getMiningDifficulty(){
-        return jdbcTemplate.queryForObject("select json_extract(details,\"$.Difficulty\") from dsblocks order by block_num desc limit 1",String.class);
+    public Pair<Double,Double> getMiningDifficulty(){
+
+        String response = requestZilliqaApi("GetLatestDsBlock",Collections.singletonList(""));
+        try {
+            final ObjectNode node = new ObjectMapper().readValue(response, ObjectNode.class);
+            JsonNode result = node.get("result").get("header");
+            return Pair.of(result.get("Difficulty").asDouble(),result.get("DifficultyDS").asDouble());
+
+        } catch (IOException e) {
+            log.error("Cannot get mining difficulties.Exception:" + e);
+        }
+        return null;
     }
 
     public List<BlockchainSummaryDto> getBlockchainSummaryFullHistoryList() {
@@ -285,9 +298,10 @@ public class ZilliqaAPIFetcherService {
 
     private List<BlockchainSummaryDto> getBlockchainSummaryList(Boolean limit){
         String sql = String.format("select * from ( " +
-                "select coalesce(avg(ds_mining_difficulty),0) as dsMiningDifficulty, max(transaction_num) as transactionNum,avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded from blockchain_summary group by day_added order by day_added desc %s) x " +
+                "select coalesce(avg(ds_mining_difficulty),0) as dsMiningDifficulty,coalesce(avg(tx_mining_difficulty),0) as txMiningDifficulty, max(transaction_num) as transactionNum,avg(transaction_rate) as transactionRate,avg(tx_block_num) as txBlockNum,avg(zil_price) as zilPrice, day_added as dayAdded from blockchain_summary group by day_added order by day_added desc %s) x " +
                 "order by x.dayAdded asc",limit ? "limit 7" : ""
                 );
         return jdbcTemplate.query(sql,new BeanPropertyRowMapper(BlockchainSummaryDto.class));
     }
+
 }

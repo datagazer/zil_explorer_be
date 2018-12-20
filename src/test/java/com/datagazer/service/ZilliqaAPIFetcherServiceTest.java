@@ -5,6 +5,7 @@ import com.datagazer.domain.BlockchainSummaryDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.flywaydb.core.internal.util.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,7 +125,7 @@ public class ZilliqaAPIFetcherServiceTest {
 
     @Test
     public void getBlockchainSummary() throws IOException {
-        jdbcTemplate.execute("insert into blockchain_summary (ds_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(123,100,123.23,3444,0.00022)");
+        jdbcTemplate.execute("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(123,111,100,123.23,3444,0.00022)");
         List<BlockchainSummaryDto> blockchainSummaryList = zilliqaAPIFetcherService.getBlockchainSummaryList();
         log.info(blockchainSummaryList.get(0).toString());
         assertTrue(blockchainSummaryList.size() > 0);
@@ -142,8 +143,9 @@ public class ZilliqaAPIFetcherServiceTest {
     @Test
     public void getMiningDifficulty() throws IOException {
         zilliqaAPIFetcherService.saveDSBlockDetails();
-        String miningDifficulty = zilliqaAPIFetcherService.getMiningDifficulty();
-        assertTrue(Integer.valueOf(miningDifficulty) > 0);
+        Pair<Double, Double> miningDifficulty = zilliqaAPIFetcherService.getMiningDifficulty();
+        assertTrue(miningDifficulty.getLeft() > 0);
+        assertTrue(miningDifficulty.getRight() > 0);
     }
 
 }
