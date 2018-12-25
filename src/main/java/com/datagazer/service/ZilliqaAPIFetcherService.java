@@ -273,7 +273,7 @@ public class ZilliqaAPIFetcherService {
                                     capitalization(binanceAPIFetcherService.getCapitalization(zilPrice)).
                                     transactionRate(transactionRate).
                                     txMiningDifficulty(miningDifficulty.getLeft().toString()).
-                                    txMiningDifficulty(miningDifficulty.getRight().toString()).
+                                    dsMiningDifficulty(miningDifficulty.getRight().toString()).
                                 build();
     }
 
