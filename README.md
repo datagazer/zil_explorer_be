@@ -32,3 +32,22 @@ Major steps for building:
 # Notes for build
 The application is run in AWS ECS service. You should adopt the script to fit your AWS account.
 
+#### override application properies
+a file ./src/main/resources/application.properties bare externalised properties. Any of them can be set as an environment variable or via java argument.
+
+
+To change a listen port:
+- via env variables
+	(server.port interpolates into SERVER_PORT)
+	$ export SERVER.PORT=8084 && java -jar ...
+
+- via java args
+	java -Dserver.port=8043 -jar ...
+
+If a variable has an empty value in this file - it has to be set at an application start time, otherwise, an application will fail.
+
+#### FlyWay
+The FlyWay migration scripts are stored in ./src/main/resources/db folder. 
+
+The Mysql schema should be created before the application start. The DDL is applied by Flyway.
+
