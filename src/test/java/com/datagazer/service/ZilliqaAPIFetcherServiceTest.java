@@ -125,7 +125,7 @@ public class ZilliqaAPIFetcherServiceTest {
 
     @Test
     public void getBlockchainSummary() throws IOException {
-        jdbcTemplate.execute("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(123,111,100,123.23,3444,0.00022)");
+        jdbcTemplate.execute("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price,market_cap) values(123,111,100,123.23,3444,0.00022,123123132)");
         List<BlockchainSummaryDto> blockchainSummaryList = zilliqaAPIFetcherService.getBlockchainSummaryList();
         log.info(blockchainSummaryList.get(0).toString());
         assertTrue(blockchainSummaryList.size() > 0);

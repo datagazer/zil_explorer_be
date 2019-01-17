@@ -36,6 +36,9 @@ public class ZilliqaAPIFetcherService {
     @Autowired
     private BinanceAPIFetcherService binanceAPIFetcherService;
 
+    @Autowired
+    private CoinMarketCapAPIFetcherService coinMarketCapAPIFetcherService;
+
     public static String API_PATH = "https://api.zilliqa.com";
     public static HttpHeaders headers = new HttpHeaders();
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36";
@@ -74,9 +77,11 @@ public class ZilliqaAPIFetcherService {
         Double transactionRate = blockchainSummaryDto.getTransactionRate();
         Double numTxBlocks = blockchainSummaryDto.getTxBlockNum();
         Double zilPrice = binanceAPIFetcherService.getZilPrice();
+        Double marketCap = coinMarketCapAPIFetcherService.getMarketCap();
+
         Double transactionNum = blockchainSummaryDto.getTransactionNum();
         Pair<Double,Double> miningDifficulty = getMiningDifficulty();
-        jdbcTemplate.execute(String.format("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price) values(%s,%s,%s,%s,%s,%s)",miningDifficulty.getRight(),miningDifficulty.getLeft(),transactionNum,transactionRate,numTxBlocks,zilPrice));
+        jdbcTemplate.execute(String.format("insert into blockchain_summary (ds_mining_difficulty,tx_mining_difficulty,transaction_num,transaction_rate,tx_block_num,zil_price,market_cap) values(%s,%s,%s,%s,%s,%s,%s)",miningDifficulty.getRight(),miningDifficulty.getLeft(),transactionNum,transactionRate,numTxBlocks,zilPrice,marketCap));
     }
 
     public List<String> fetchTransactionList(){
@@ -267,10 +272,11 @@ public class ZilliqaAPIFetcherService {
         Double transactionRate = fetchBlockChainInfo().getTransactionRate();
         Pair<Double, Double> miningDifficulty = getMiningDifficulty();
 
+        Double capitalization = jdbcTemplate.queryForObject("select market_cap from blockchain_summary order by time_added desc limit 1", Double.class);
         return MainPageValuesDto.builder().
                                     price(binanceAPIFetcherService.getZilPriceString(zilPrice)).
-                                    totalZilSupply(binanceAPIFetcherService.getTotalZilIssued()).
-                                    capitalization(binanceAPIFetcherService.getCapitalization(zilPrice)).
+                                    totalZilSupply("").
+                                    capitalization(String.format("%.0fM", capitalization / 1000000.0)).
                                     transactionRate(transactionRate).
                                     txMiningDifficulty(miningDifficulty.getLeft().toString()).
                                     dsMiningDifficulty(miningDifficulty.getRight().toString()).
