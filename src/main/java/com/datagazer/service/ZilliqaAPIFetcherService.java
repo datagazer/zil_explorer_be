@@ -71,6 +71,7 @@ public class ZilliqaAPIFetcherService {
         }
     }
 
+
     @Scheduled(cron = "0 0/5 * * * ?")
     public void saveBlockchainSummary(){
         BlockchainSummaryDto blockchainSummaryDto = fetchBlockChainInfo();
